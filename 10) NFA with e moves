@@ -1,0 +1,93 @@
+#include<stdio.h>
+#include<stdlib.h>
+#include<stdbool.h>
+
+#define MAX_STATES 100
+#define MAX_SYMBOLS 100
+
+typedef struct {
+    int count;
+    int states[MAX_STATES];
+} StateSet;
+
+typedef struct {
+    int fromState;
+    char symbol;
+    StateSet toStates;
+} Transition;
+
+typedef struct {
+    int stateCount;
+    int symbolCount;
+    StateSet finalStates;
+    Transition transitions[MAX_STATES][MAX_SYMBOLS];
+} NFA;
+
+void printStateSet(StateSet *s) {
+    printf("{ ");
+    for(int i=0; i<s->count; i++) {
+        printf("%d ", s->states[i]);
+    }
+    printf("}");
+}
+
+void printNFA(NFA *nfa) {
+    printf("State count: %d\n", nfa->stateCount);
+    printf("Symbol count: %d\n", nfa->symbolCount);
+
+    printf("Final states: ");
+    printStateSet(&(nfa->finalStates));
+    printf("\n");
+
+    for(int i=0; i<nfa->stateCount; i++) {
+        for(int j=0; j<nfa->symbolCount; j++) {
+            Transition *t = &(nfa->transitions[i][j]);
+            printf("%d -- %c -> ", t->fromState, t->symbol);
+            printStateSet(&(t->toStates));
+            printf("\n");
+        }
+    }
+}
+
+void addState(StateSet *s, int state) {
+    for(int i=0; i<s->count; i++) {
+        if(s->states[i] == state) {
+            return;
+        }
+    }
+    s->states[s->count] = state;
+    s->count++;
+}
+
+void addStates(StateSet *s1, StateSet *s2) {
+    for(int i=0; i<s2->count; i++) {
+        addState(s1, s2->states[i]);
+    }
+}
+
+void epsilonClosure(NFA *nfa, int state, StateSet *closure) {
+    addState(closure, state);
+
+    for(int i=0; i<nfa->symbolCount; i++) {
+        Transition *t = &(nfa->transitions[state][i]);
+        if(t->symbol == '\0') {
+            for(int j=0; j<t->toStates.count; j++) {
+                epsilonClosure(nfa, t->toStates.states[j], closure);
+            }
+        }
+    }
+}
+
+int main() {
+    NFA nfa = {
+        .stateCount = 3,
+        .symbolCount = 2,
+        .finalStates = { .count = 2, .states = {2, 1} },
+        .transitions = {
+            { {0, '\0', { .count = 1, .states = {1} }}, {0, 'a', { .count = 0 }} },
+            { {1, 'b', { .count = 1, .states = {2} }}, {1, '\0', { .count = 1, .states = {0} }} },
+            { {2, '\0', { .count = 0 }}, {2, '\0', { .count = 0 }} }
+        }
+    };
+
+    printNFA(&nfa);
