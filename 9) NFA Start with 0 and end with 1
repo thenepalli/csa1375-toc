@@ -1,0 +1,83 @@
+#include <stdio.h>
+
+#define MAX_STATES 10 // Maximum number of states
+#define SYMBOLS 2 // Number of input symbols
+
+int transitions[MAX_STATES][SYMBOLS][MAX_STATES]; // Transition table
+int accepting_states[MAX_STATES]; // Accepting states
+int num_states; // Number of states
+int start_state; // Start state
+
+// Function to add a transition to the transition table
+void add_transition(int from_state, int symbol, int to_state) {
+    transitions[from_state][symbol][to_state] = 1;
+}
+
+// Function to check if a given string is accepted by the NFA
+int accepts(char *str) {
+    int current_states[MAX_STATES] = { start_state };
+    int next_states[MAX_STATES];
+    int num_current_states = 1;
+    int num_next_states;
+    int i, j, k;
+
+    // For each input symbol in the string
+    for (i = 0; str[i] != '\0'; i++) {
+        // Find the set of possible next states for the current set of states
+        num_next_states = 0;
+        for (j = 0; j < num_current_states; j++) {
+            int state = current_states[j];
+            for (k = 0; k < num_states; k++) {
+                if (transitions[state][str[i]-'0'][k]) {
+                    next_states[num_next_states++] = k;
+                }
+            }
+        }
+
+        // If there are no possible next states, the string is not accepted
+        if (num_next_states == 0) {
+            return 0;
+        }
+
+        // Update the current set of states to the set of possible next states
+        num_current_states = num_next_states;
+        for (j = 0; j < num_current_states; j++) {
+            current_states[j] = next_states[j];
+        }
+    }
+
+    // Check if any of the current states are accepting states
+    for (i = 0; i < num_current_states; i++) {
+        if (accepting_states[current_states[i]]) {
+            return 1;
+        }
+    }
+
+    // If none of the current states are accepting states, the string is not accepted
+    return 0;
+}
+
+int main() {
+    int i;
+
+    // Set up the NFA
+    num_states = 4;
+    start_state = 0;
+
+    add_transition(0, 0, 1);
+    add_transition(0, 1, 0);
+    add_transition(1, 1, 2);
+    add_transition(2, 0, 3);
+    add_transition(3, 0, 3);
+    add_transition(3, 1, 3);
+
+    accepting_states[3] = 1;
+
+    // Test the NFA with some strings
+    printf("%d\n", accepts("o1")); // Should print 1
+    printf("%d\n", accepts("o0")); // Should print 0
+    printf("%d\n", accepts("o10")); // Should print 1
+    printf("%d\n", accepts("o001")); // Should print 0
+
+    return 0;
+}
