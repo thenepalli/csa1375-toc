@@ -1,0 +1,62 @@
+#include <stdio.h>
+#include <string.h>
+
+#define MAX_STATES 100
+#define MAX_INPUTS 100
+
+typedef struct {
+    int num_states;
+    int num_inputs;
+    int transition_table[MAX_STATES][MAX_INPUTS][MAX_STATES];
+    int accept_states[MAX_STATES];
+} NFA;
+
+int simulate_nfa(NFA* nfa, char* str) {
+    int current_states[MAX_STATES];
+    int next_states[MAX_STATES];
+    int i, j, k, l;
+    int len = strlen(str);
+    int num_current_states = 1;
+    current_states[0] = 0; // start state
+    for (i = 0; i < len; i++) {
+        num_current_states = 0;
+        for (j = 0; j < nfa->num_states; j++) {
+            for (k = 0; k < num_current_states; k++) {
+                int state = current_states[k];
+                for (l = 0; l < nfa->num_inputs; l++) {
+                    if (nfa->transition_table[state][l][j]) {
+                        if (l == str[i] - 'a') {
+                            next_states[num_current_states++] = j;
+                        }
+                    }
+                }
+            }
+        }
+        memcpy(current_states, next_states, num_current_states * sizeof(int));
+    }
+    for (i = 0; i < num_current_states; i++) {
+        if (nfa->accept_states[current_states[i]]) {
+            return 1; // accepted
+        }
+    }
+    return 0; // rejected
+}
+
+int main() {
+    NFA nfa;
+    nfa.num_states = 3;
+    nfa.num_inputs = 2;
+    nfa.transition_table[0][1][1] = 1; // b -> q1
+    nfa.transition_table[1][0][2] = 1; // 0 -> q2
+    nfa.transition_table[1][1][1] = 1; // a -> q1
+    nfa.accept_states[2] = 1; // q2 is an accept state
+    char str[100];
+    printf("Enter a string: ");
+    scanf("%s", str);
+    if (simulate_nfa(&nfa, str)) {
+        printf("Accepted.\n");
+    } else {
+        printf("Rejected.\n");
+    }
+    return 0;
+}
